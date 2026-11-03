@@ -1,0 +1,2 @@
+# Python runtime for the API (and preprocessing). Frontend uses frontend/package-lock.json.
+-r backend/requirements.txt

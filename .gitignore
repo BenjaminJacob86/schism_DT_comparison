@@ -1,0 +1,50 @@
+# Dependencies and build
+node_modules/
+frontend/dist/
+frontend/node_modules/
+**/__pycache__/
+**/*.py[cod]
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+*.egg-info/
+.venv/
+venv/
+
+# Environment and secrets
+.env
+.env.local
+.env.*.local
+frontend/.env
+frontend/.env.local
+
+# Runtime S3 location chosen in the options menu
+data/storage_override.json
+
+# Large source datasets — never commit
+data/raw/
+data/buildings/
+data/terrain/
+data/models/
+data/cache/
+lod3-hh_area*/
+*.gml
+*.nc
+*.zarr/
+*.zip
+
+# Generated tiles and caches
+data/tiles/
+*.b3dm
+*.glb
+*.i3dm
+*.pnts
+*.cmpt
+
+# Editor / OS
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/*
+!.vscode/extensions.json
+*.log

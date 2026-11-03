@@ -1,0 +1,25 @@
+# Recreate the Python stack for this viewer (not the schismview Dash/Tk GUI).
+# Derived from schismview-refactor/environment.yml, trimmed to what this API uses.
+#
+#   conda env create -f environment.yml
+#   conda activate hamburg-3d
+#
+name: hamburg-3d
+channels:
+  - conda-forge
+dependencies:
+  - python=3.12
+  - numpy>=2.0
+  - xarray>=2024.6
+  - netcdf4>=1.7
+  - h5netcdf>=1.3
+  - cftime
+  - pyproj>=3.6
+  - pillow>=10.0
+  - matplotlib>=3.8
+  - cmocean>=4.0
+  - pip
+  - pip:
+      - fastapi==0.141.1
+      - uvicorn[standard]==0.53.0
+      - pydantic==2.13.4

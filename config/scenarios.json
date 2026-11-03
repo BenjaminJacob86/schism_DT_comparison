@@ -1,0 +1,45 @@
+{
+  "title": "Digital twin scenario hub",
+  "tagline": "Compare named SCHISM runs on public MinIO. Both scenarios use the same mesh; difference is B minus A on those nodes.",
+  "defaultA": "baseline",
+  "defaultB": "analysis",
+  "criticalDefault": 0.0,
+  "scenarios": [
+    {
+      "id": "2090_Veg_CNTRL",
+      "label": "RCP85_VEG_CNTRL",
+      "endpoint": "https://minio.dive.edito.eu",
+      "bucket": "project-foccus",
+      "modelPrefix": "DigitalTwinTest/RCP85_Veg_CNTRL/model",
+      "zarrPrefix": "DigitalTwinTest/RCP85_Veg_CNTRL/zarr/schism.zarr",
+      "buildingsPrefix": "DigitalTwinTest/Buildings/hamburg/area1"
+    },
+    {
+      "id": "2090_Veg_max",
+      "label": "RCP85_VEG_max",
+      "endpoint": "https://minio.dive.edito.eu",
+      "bucket": "project-foccus",
+      "modelPrefix": "DigitalTwinTest/RCP85_Veg_max/model",
+      "zarrPrefix": "DigitalTwinTest/RCP85_Veg_max/zarr/schism.zarr",
+      "buildingsPrefix": "DigitalTwinTest/Buildings/hamburg/area1"
+    },
+    {
+      "id": "1997_Veg_CNTRL",
+      "label": "1997_Veg_CNTRL",
+      "endpoint": "https://minio.dive.edito.eu",
+      "bucket": "project-foccus",
+      "modelPrefix": "DigitalTwinTest/1997_RCP85_Veg_CNTRL/model",
+      "zarrPrefix": "DigitalTwinTest/1997_RCP85_Veg_CNTRL/zarr/schism.zarr",
+      "buildingsPrefix": "DigitalTwinTest/Buildings/hamburg/area1"
+    },
+    {
+      "id": "1997_Veg_max",
+      "label": "1997_Veg_max",
+      "endpoint": "https://minio.dive.edito.eu",
+      "bucket": "project-foccus",
+      "modelPrefix": "DigitalTwinTest/1997_RCP85_Veg_max/model",
+      "zarrPrefix": "DigitalTwinTest/1997_RCP85_Veg_max/zarr/schism.zarr",
+      "buildingsPrefix": "DigitalTwinTest/Buildings/hamburg/area1"
+    }
+  ]
+}

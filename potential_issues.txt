@@ -1,0 +1,332 @@
+Yes. I researched this specifically from the perspective of your NetCDF/xarray/Zarr ? React + TypeScript + CesiumJS architecture, and there are some real difficulties.
+
+The good news is: I don't think they are reasons to abandon React + CesiumJS. But I would change one important part of the original architecture:
+
+Don't make Cesium consume NetCDF directly.
+Treat NetCDF/Zarr as the scientific source, and introduce a browser-oriented data/tile layer between it and Cesium.
+
+My conclusion
+
+I would rate the architecture:
+
+Component	Suitability
+React	?? Very good
+TypeScript	?? Very good
+CesiumJS	?? Very good for 3D geospatial scene
+CityGML ? 3D Tiles	?? Excellent
+NetCDF directly in browser	?? Not recommended
+Zarr directly in browser	?? Technically possible
+Zarr ? custom spatial tiles	?? Excellent
+Cesium custom scientific layer	?? Good, but requires development
+deck.gl alongside Cesium	?? Potentially very useful
+Python/xarray backend	?? Keep it
+
+The important distinction is that Cesium is excellent at rendering geospatial 3D data, but it isn't a scientific-array visualization framework.
+
+Cesium gives you low-level primitives and GPU geometry, and it supports tiled imagery and terrain, but you have to decide how your scientific arrays become something the GPU can render.
+
+1. The main difficulty: NetCDF is not a browser visualization format
+
+Your current workflow is probably something like:
+
+NetCDF
+   ?
+xarray
+   ?
+select timestep
+   ?
+select variable
+   ?
+plot
+
+For example:
+
+ds["water_level"].isel(time=50)
+
+That is extremely convenient in Python.
+
+But putting:
+
+model.nc
+    ?
+browser
+    ?
+Cesium
+
+is not the right architecture.
+
+A browser would need to understand:
+
+NetCDF/HDF structures
+dimensions
+coordinate systems
+compression
+variables
+chunking
+potentially huge arrays
+missing values
+scientific metadata
+interpolation
+potentially unstructured meshes
+
+And then you'd still need to turn the resulting array into GPU geometry.
+
+So I would not make NetCDF a frontend concern.
+
+2. Zarr is much more interesting
+
+This is where things get better.
+
+There is now a proper TypeScript Zarr implementation, zarrita.js, that runs in browsers and supports Zarr v2 and v3. It can access individual chunks and spatial regions rather than downloading an entire dataset.
+
+For example, conceptually:
+
+S3/R2
+   ¦
+   +-- model.zarr
+          ¦
+          +-- time
+          +-- x
+          +-- y
+          +-- water_level
+                    ¦
+                    +-- chunk
+                    +-- chunk
+                    +-- chunk
+                    +-- ...
+
+The browser could request only:
+
+time = 50
+x = 1200:1600
+y = 800:1200
+
+rather than the whole model.
+
+That's a very good match for your application.
+
+Zarrita explicitly supports lazy chunk access and regional reads, and its HTTP FetchStore is designed for browser access to remote Zarr stores.
+
+So Zarr is a viable browser data source.
+
+But there's a catch.
+
+3. Zarr solves data access, not visualization
+
+Suppose the browser gets:
+
+500 × 500
+water depth values
+
+You still need to turn those values into something Cesium can render.
+
+For example:
+
+Zarr array
+     ?
+500 × 500 values
+     ?
+vertices
+     ?
+triangles
+     ?
+GPU buffers
+     ?
+Cesium Primitive
+
+Cesium's low-level Geometry/Primitive system absolutely allows this: you can provide positions, indices, normals, texture coordinates, etc.
+
+But you have to build that layer yourself.
+
+That's probably the biggest technical development task in your project.
+
+4. There are actually several possible representations of your hydrodynamic data
+
+This is where we need to understand your model structure.
+
+Case A — Regular grid
+
+Something like:
+
+time × y × x
+
+with:
+
+water_level[time, y, x]
+
+This is relatively easy.
+
+You can create:
+
+grid
+ ?
+triangulated surface
+ ?
+Cesium geometry
+
+This would be my preferred situation.
+
+Case B — Curvilinear grid
+
+For example:
+
+time × eta × xi
+
+with separate:
+
+lon[eta,xi]
+lat[eta,xi]
+
+Still very manageable.
+
+You generate the mesh from:
+
+lon
+lat
+value
+
+and send it to the GPU.
+
+Case C — Unstructured mesh
+
+For example:
+
+nodes
+elements
+connectivity
+
+This is also possible, but requires a proper mesh renderer.
+
+Something like:
+
+nodes
+  ?
+triangles
+  ?
+scalar value per node/cell
+  ?
+GPU
+
+This could actually work very well in Cesium.
+
+But we'd want to carefully design the binary representation.
+
+Case D — 3D model
+
+If you have:
+
+time × depth × y × x
+
+or an unstructured 3D mesh, things become considerably more complicated.
+
+You might want:
+
+slices
+isosurfaces
+volume rendering
+particles
+vectors
+
+Cesium can technically be extended to do this, but at that point we're developing a scientific GPU visualization engine on top of Cesium.
+
+That's a different level of complexity.
+
+5. This is where deck.gl becomes interesting
+
+I think I was slightly too Cesium-centric in our previous discussion.
+
+There is a very good argument for:
+
+              React
+                 ¦
+       +-------------------+
+       ¦                   ¦
+    CesiumJS             deck.gl
+       ¦                   ¦
+ Buildings              Scientific
+ Terrain                visualization
+ 3D Tiles               GPU layers
+       ¦                   ¦
+       +-------------------+
+                 ¦
+              Browser
+
+deck.gl is explicitly designed around data visualization layers.
+
+Its TileLayer, for example, loads only tiles visible in the current viewport. It supports custom fetching through getTileData.
+
+And Tile3DLayer already handles 3D Tiles, meaning deck.gl can also participate in the building side of the application.
+
+So you have an interesting possibility:
+
+Cesium = geographic world
+deck.gl = scientific visualization
+
+That could be a very strong architecture.
+
+6. But I wouldn't automatically use deck.gl for everything
+
+There is a tradeoff.
+
+Cesium is better suited to:
+
+globe
+terrain
+camera
+3D Tiles
+buildings
+geographic coordinate transformations
+large geospatial scenes
+
+deck.gl is better suited to:
+
+data-driven GPU visualization
+grids
+vectors
+points
+particles
+custom layers
+tiled datasets
+
+So I'd avoid making either one responsible for everything.
+
+7. An even better architecture for your project
+
+After researching this, I'd change the proposed architecture to:
+
+                         WEB APP
+                            ¦
+                     React + TypeScript
+                            ¦
+              +---------------------------+
+              ¦                           ¦
+           CesiumJS                    Scientific
+              ¦                         renderer
+              ¦                       deck.gl/custom
+              ¦                           ¦
+       +-------------+              +------------+
+       ¦             ¦              ¦            ¦
+    Terrain       Buildings      Water       Velocity
+                  3D Tiles       surface      particles
+                                  depth
+       ¦             ¦              ¦
+       +------------------------------------------
+                            ¦
+                     Data/tile services
+                            ¦
+             +-----------------------------+
+             ¦                             ¦
+          3D Tiles                       Zarr
+       buildings/terrain             model variables
+             ¦                             ¦
+             +-----------------------------+
+                            ¦
+                      S3 / R2 / CDN
+                            ¦
+                    Python preprocessing
+                            ¦
+                         xarray
+                            ¦
+                       NetCDF files
+
+This is much more compelling to me now.

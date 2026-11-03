@@ -1,0 +1,2 @@
+# Same scientific stack as the API (numpy, xarray, pyproj, netCDF4).
+-r ../backend/requirements.txt
