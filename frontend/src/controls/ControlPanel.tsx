@@ -55,6 +55,10 @@ export function ControlPanel() {
   const timeIndex = Math.min(waterSurface.timeIndex, Math.max(0, nTimes - 1));
   const seconds = waterSurface.timeSeconds[timeIndex] ?? 0;
   const ready = nTimes > 0 && (waterSurface.ready || waterSurface.nTimes > 0);
+  const scaleMin = waterSurface.colorScaleMin;
+  const scaleMax = waterSurface.colorScaleMax;
+  const rangeLo = waterSurface.colorMin ?? scaleMin;
+  const rangeHi = waterSurface.colorMax ?? scaleMax;
   const colormapGroups = ["sequential", "diverging", "cyclic"].map((kind) => ({
     kind,
     label: KIND_LABEL[kind] ?? kind,
@@ -286,7 +290,7 @@ export function ControlPanel() {
           <p className="muted">Recording ready. Click Save video if the file did not download.</p>
         ) : null}
         {animationExport.error ? <p className="muted">{animationExport.error}</p> : null}
-        {ready && waterSurface.elevMin !== null && waterSurface.elevMax !== null ? (
+        {ready && scaleMin !== null && scaleMax !== null && rangeLo !== null && rangeHi !== null ? (
           <>
             <div className="color-range-heading-row">
               <h2 className="color-range-heading">Color range</h2>
@@ -315,10 +319,10 @@ export function ControlPanel() {
             </div>
             <ColorRangeSlider
               key={`${waterSurface.variable}:${waterSurface.colormap}:${waterSurface.hubView}`}
-              dataMin={waterSurface.colorScaleMin}
-              dataMax={waterSurface.colorScaleMax}
-              vmin={waterSurface.colorMin ?? waterSurface.colorScaleMin}
-              vmax={waterSurface.colorMax ?? waterSurface.colorScaleMax}
+              dataMin={scaleMin}
+              dataMax={scaleMax}
+              vmin={rangeLo}
+              vmax={rangeHi}
               unit={waterSurface.variableUnit}
               label={waterSurface.variableLabel}
               gradient={waterSurface.colormapCss}

@@ -12,6 +12,7 @@ import {
   TextureMagnificationFilter,
   TextureMinificationFilter,
   VerticalOrigin,
+  type ImageryProvider,
   type Viewer,
 } from "cesium";
 
@@ -137,6 +138,7 @@ class ZoomBiasedOverlayProvider {
   readonly tileDiscardPolicy = new NeverTileDiscardPolicy();
   readonly errorEvent = new CesiumEvent();
   readonly ready = true;
+  readonly proxy = undefined;
   private readonly template: string;
 
   constructor(template: string, rectangle: Rectangle, minimumLevel: number, credit: string) {
@@ -992,7 +994,9 @@ export class WaterSurfaceRenderer {
         `SCHISM ${this.variableLabel}`,
       );
       const previous = this.overlayLayer;
-      const layer = viewer.imageryLayers.addImageryProvider(provider);
+      const layer = viewer.imageryLayers.addImageryProvider(
+        provider as unknown as ImageryProvider,
+      );
       layer.show = this.visible;
       layer.alpha = 0.92;
       layer.minificationFilter = TextureMinificationFilter.NEAREST;
